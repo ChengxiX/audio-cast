@@ -1,4 +1,4 @@
-const MUSIC_MAX_BITRATE = 256000;
+const MUSIC_MAX_BITRATE = 320000;
 
 function parseFmtpParameters(input) {
   const parameters = new Map();
@@ -54,7 +54,7 @@ export async function prepareLocalAudioTrack(track) {
   }
 
   if (supported.sampleRate) {
-    constraints.sampleRate = 48000;
+    constraints.sampleRate = 256000;
   }
 
   if (Object.keys(constraints).length === 0) {
