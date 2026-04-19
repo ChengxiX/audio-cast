@@ -1,4 +1,5 @@
 import { createSocket, fetchJson, setBanner } from "/common.js";
+import { prepareAudioSender, prepareLocalAudioTrack, tuneOpusDescription } from "/rtc-audio.js";
 
 const loginCard = document.querySelector("#login-card");
 const controlCard = document.querySelector("#control-card");
@@ -17,6 +18,7 @@ let displayStream = null;
 let audioStream = null;
 let iceServers = [];
 let stoppingManually = false;
+let notificationContext = null;
 const peers = new Map();
 
 function renderAuthState() {
@@ -28,6 +30,55 @@ function renderLiveState(isLive) {
   liveIndicator.textContent = isLive ? "Live" : "Offline";
   startButton.disabled = isLive;
   stopButton.disabled = !isLive;
+}
+
+async function prepareNotificationAudio() {
+  if (!window.AudioContext && !window.webkitAudioContext) {
+    return null;
+  }
+
+  if (!notificationContext) {
+    const AudioContextClass = window.AudioContext ?? window.webkitAudioContext;
+    notificationContext = new AudioContextClass();
+  }
+
+  if (notificationContext.state === "suspended") {
+    try {
+      await notificationContext.resume();
+    } catch {
+      return notificationContext;
+    }
+  }
+
+  return notificationContext;
+}
+
+async function playOfflineAlert() {
+  const context = await prepareNotificationAudio();
+  if (!context || context.state !== "running") {
+    return;
+  }
+
+  const gain = context.createGain();
+  gain.gain.setValueAtTime(0.0001, context.currentTime);
+  gain.connect(context.destination);
+
+  const notes = [
+    { frequency: 880, start: 0, duration: 0.12 },
+    { frequency: 659.25, start: 0.16, duration: 0.2 }
+  ];
+
+  for (const note of notes) {
+    const oscillator = context.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(note.frequency, context.currentTime + note.start);
+    oscillator.connect(gain);
+    oscillator.start(context.currentTime + note.start);
+    oscillator.stop(context.currentTime + note.start + note.duration);
+  }
+
+  gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.45);
 }
 
 function closePeer(peerId) {
@@ -109,7 +160,8 @@ async function createPeerConnection(peerId) {
   const peer = new RTCPeerConnection({ iceServers: await ensureRtcConfig() });
 
   for (const track of audioStream.getAudioTracks()) {
-    peer.addTrack(track, audioStream);
+    const sender = peer.addTrack(track, audioStream);
+    await prepareAudioSender(sender);
   }
 
   peer.onicecandidate = (event) => {
@@ -147,7 +199,7 @@ async function handleListenerJoined(peerId) {
     offerToReceiveAudio: false,
     offerToReceiveVideo: false
   });
-  await peer.setLocalDescription(offer);
+  await peer.setLocalDescription(tuneOpusDescription(offer));
 
   socket.send(
     JSON.stringify({
@@ -205,6 +257,7 @@ async function startBroadcast() {
   }
 
   try {
+    await prepareNotificationAudio();
     stoppingManually = false;
     displayStream = await navigator.mediaDevices.getDisplayMedia({
       video: true,
@@ -218,6 +271,7 @@ async function startBroadcast() {
       return;
     }
 
+    await Promise.all(audioTracks.map((track) => prepareLocalAudioTrack(track)));
     audioStream = new MediaStream(audioTracks);
     socket = createSocket();
     socket.addEventListener("message", handleSocketMessage);
@@ -229,6 +283,7 @@ async function startBroadcast() {
         return;
       }
       resetPeers();
+      playOfflineAlert().catch(() => {});
       setBanner(statusBanner, "Broadcast socket closed.", "neutral");
     });
     socket.addEventListener("open", () => {
@@ -237,7 +292,10 @@ async function startBroadcast() {
 
     const stopWhenEnded = () => {
       if (displayStream) {
-        stopBroadcast();
+        stoppingManually = true;
+        cleanupCapture();
+        playOfflineAlert().catch(() => {});
+        setBanner(statusBanner, "Broadcast sharing ended. FM4382 broadcast is offline.", "neutral");
       }
     };
 

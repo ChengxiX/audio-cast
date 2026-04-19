@@ -1,4 +1,5 @@
 import { createSocket, fetchJson, setBanner } from "/common.js";
+import { tuneOpusDescription } from "/rtc-audio.js";
 
 const statusBanner = document.querySelector("#status-banner");
 const liveIndicator = document.querySelector("#live-indicator");
@@ -121,7 +122,7 @@ async function createPeerConnection(peerId) {
 async function handleOffer(message) {
   const connection = await createPeerConnection(message.peerId);
   await connection.setRemoteDescription(message.payload);
-  const answer = await connection.createAnswer();
+  const answer = tuneOpusDescription(await connection.createAnswer());
   await connection.setLocalDescription(answer);
 
   socket.send(

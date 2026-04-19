@@ -104,6 +104,21 @@ body {
   color: var(--muted);
 }
 
+.brand-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  margin-bottom: 12px;
+  padding: 0 12px;
+  border: 1px solid rgba(13, 107, 99, 0.22);
+  border-radius: 999px;
+  background: rgba(13, 107, 99, 0.08);
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   text-transform: uppercase;
