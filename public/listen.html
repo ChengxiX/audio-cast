@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Listen Live</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Listener</p>
+            <h1>Live audio room</h1>
+          </div>
+          <a class="link-action" href="/broadcast">Broadcaster console</a>
+        </div>
+
+        <section class="card">
+          <div class="status-grid">
+            <div>
+              <span class="label">Broadcast</span>
+              <strong id="live-indicator">Checking…</strong>
+            </div>
+            <div>
+              <span class="label">Listeners</span>
+              <strong id="listener-count">0</strong>
+            </div>
+            <div>
+              <span class="label">Room</span>
+              <strong>main</strong>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="listen-button" class="button primary" type="button">Start listening</button>
+            <button id="disconnect-button" class="button ghost" type="button" disabled>Disconnect</button>
+          </div>
+
+          <audio id="audio-player" autoplay playsinline controls></audio>
+        </section>
+
+        <p id="status-banner" class="banner">Loading room status…</p>
+      </section>
+    </main>
+
+    <script type="module" src="/listen.js"></script>
+  </body>
+</html>
