@@ -54,7 +54,7 @@ export async function prepareLocalAudioTrack(track) {
   }
 
   if (supported.sampleRate) {
-    constraints.sampleRate = 256000;
+    constraints.sampleRate = 44100;
   }
 
   if (Object.keys(constraints).length === 0) {
@@ -107,8 +107,8 @@ export function tuneOpusDescription(description) {
   parameters.set("stereo", "1");
   parameters.set("sprop-stereo", "1");
   parameters.set("maxaveragebitrate", String(MUSIC_MAX_BITRATE));
-  parameters.set("cbr", "0");
-  parameters.set("useinbandfec", "1");
+  parameters.set("cbr", "1");
+  parameters.set("useinbandfec", "0");
   parameters.set("usedtx", "0");
 
   const fmtpLine = `a=fmtp:${payloadType} ${serializeFmtpParameters(parameters)}`;
